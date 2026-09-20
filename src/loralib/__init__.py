@@ -2,3 +2,4 @@
 
 from .layer import * 
 from .utils import * 
+from .moe_lora import * 

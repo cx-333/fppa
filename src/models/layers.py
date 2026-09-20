@@ -118,3 +118,27 @@ class ResidualBlockUpsample(nn.Module):
         out = self.conv(out)
         return out
     
+    
+class Bitparm(nn.Module):
+    def __init__(self, qp_num, channel, final=False):
+        super().__init__()
+        self.final = final
+        self.h = nn.Parameter(torch.nn.init.normal_(
+            torch.empty([qp_num, channel, 1, 1]), 0, 0.01))                 # entropy_botleneck._matrix  (qp_num, channel, 1)
+        self.b = nn.Parameter(torch.nn.init.normal_(
+            torch.empty([qp_num, channel, 1, 1]), 0, 0.01))                 # entropy_botleneck._bias    (qp_num, channel, 1)
+        if not final:
+            self.a = nn.Parameter(torch.nn.init.normal_(
+                torch.empty([qp_num, channel, 1, 1]), 0, 0.01))
+        else:
+            self.a = None
+
+    def forward(self, x, index):
+        h = torch.index_select(self.h, 0, index)
+        b = torch.index_select(self.b, 0, index)
+        x = x * F.softplus(h) + b
+        if self.final:
+            return x
+        a = torch.index_select(self.a, 0, index)    # type: ignore 
+        return x + torch.tanh(x) * torch.tanh(a)
+    

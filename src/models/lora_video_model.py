@@ -24,14 +24,14 @@ class FeatureExtractor(nn.Module):
     def __init__(self):
         super().__init__()
         self.conv1 = nn.Sequential(
-            ly.DepthConvBlock(g_ch_d, g_ch_d),
-            ly.DepthConvBlock(g_ch_d, g_ch_d),
+            lora_ly.DepthConvBlock(g_ch_d, g_ch_d),
+            lora_ly.DepthConvBlock(g_ch_d, g_ch_d),
         )
         self.conv2 = nn.Sequential(
-            ly.DepthConvBlock(g_ch_d, g_ch_d),
-            ly.DepthConvBlock(g_ch_d, g_ch_d),
-            ly.DepthConvBlock(g_ch_d, g_ch_d),
-            ly.DepthConvBlock(g_ch_d, g_ch_d),
+            lora_ly.DepthConvBlock(g_ch_d, g_ch_d),
+            lora_ly.DepthConvBlock(g_ch_d, g_ch_d),
+            lora_ly.DepthConvBlock(g_ch_d, g_ch_d),
+            lora_ly.DepthConvBlock(g_ch_d, g_ch_d),
         )
 
     def forward(self, x, quant):
@@ -54,11 +54,11 @@ class Encoder(nn.Module):
         super().__init__()
         self.conv1 = nn.Conv2d(g_ch_src_d, g_ch_d, 1)
         self.conv2 = nn.Sequential(
-            ly.DepthConvBlock(g_ch_d * 2, g_ch_d),
-            ly.DepthConvBlock(g_ch_d, g_ch_d),
+            lora_ly.DepthConvBlock(g_ch_d * 2, g_ch_d),
+            lora_ly.DepthConvBlock(g_ch_d, g_ch_d),
         )
-        self.conv3 = ly.DepthConvBlock(g_ch_d, g_ch_d)
-        self.down = nn.Conv2d(g_ch_d, g_ch_y, 3, stride=2, padding=1)
+        self.conv3 = lora_ly.DepthConvBlock(g_ch_d, g_ch_d)
+        self.down = loralib.Conv2d(g_ch_d, g_ch_y, 3, stride=2, padding=1)
 
         self.fuse_conv1_flag = False
 
@@ -78,13 +78,13 @@ class Encoder(nn.Module):
 class Decoder(nn.Module):
     def __init__(self):
         super().__init__()
-        self.up = ly.SubpelConv2x(g_ch_y, g_ch_d, 3, padding=1)
+        self.up = lora_ly.SubpelConv2x(g_ch_y, g_ch_d, 3, padding=1)
         self.conv1 = nn.Sequential(
-            ly.DepthConvBlock(g_ch_d * 2, g_ch_d),
-            ly.DepthConvBlock(g_ch_d, g_ch_d),
-            ly.DepthConvBlock(g_ch_d, g_ch_d),
+            lora_ly.DepthConvBlock(g_ch_d * 2, g_ch_d),
+            lora_ly.DepthConvBlock(g_ch_d, g_ch_d),
+            lora_ly.DepthConvBlock(g_ch_d, g_ch_d),
         )
-        self.conv2 = nn.Conv2d(g_ch_d, g_ch_d, 1)
+        self.conv2 = loralib.Conv2d(g_ch_d, g_ch_d, 1)
 
     def forward(self, x, ctx, quant_step,):
         return self.forward_torch(x, ctx, quant_step)
@@ -106,7 +106,7 @@ class ReconGeneration(nn.Module):
             lora_ly.DepthConvBlock(g_ch_recon, g_ch_recon),
             lora_ly.DepthConvBlock(g_ch_recon, g_ch_recon),
         )
-        self.head = nn.Conv2d(g_ch_recon, g_ch_src_d, 1)
+        self.head = loralib.Conv2d(g_ch_recon, g_ch_src_d, 1)
 
     def forward(self, x, quant_step):
         return self.forward_torch(x, quant_step)
@@ -124,9 +124,9 @@ class HyperEncoder(nn.Module):
     def __init__(self):
         super().__init__()
         self.conv = nn.Sequential(
-            ly.DepthConvBlock(g_ch_y, g_ch_z),
-            ly.ResidualBlockWithStride2(g_ch_z, g_ch_z),
-            ly.ResidualBlockWithStride2(g_ch_z, g_ch_z),
+            lora_ly.DepthConvBlock(g_ch_y, g_ch_z),
+            lora_ly.ResidualBlockWithStride2(g_ch_z, g_ch_z),
+            lora_ly.ResidualBlockWithStride2(g_ch_z, g_ch_z),
         )
 
     def forward(self, x):
@@ -137,9 +137,9 @@ class HyperDecoder(nn.Module):
     def __init__(self):
         super().__init__()
         self.conv = nn.Sequential(
-            ly.ResidualBlockUpsample(g_ch_z, g_ch_z),
-            ly.ResidualBlockUpsample(g_ch_z, g_ch_z),
-            ly.DepthConvBlock(g_ch_z, g_ch_y),
+            lora_ly.ResidualBlockUpsample(g_ch_z, g_ch_z),
+            lora_ly.ResidualBlockUpsample(g_ch_z, g_ch_z),
+            lora_ly.DepthConvBlock(g_ch_z, g_ch_y),
         )
 
     def forward(self, x):
@@ -150,10 +150,10 @@ class PriorFusion(nn.Module):
     def __init__(self):
         super().__init__()
         self.conv = nn.Sequential(
-            ly.DepthConvBlock(g_ch_y * 3, g_ch_y * 3),
-            ly.DepthConvBlock(g_ch_y * 3, g_ch_y * 3),
-            ly.DepthConvBlock(g_ch_y * 3, g_ch_y * 3),
-            nn.Conv2d(g_ch_y * 3, g_ch_y * 3, 1),
+            lora_ly.DepthConvBlock(g_ch_y * 3, g_ch_y * 3),
+            lora_ly.DepthConvBlock(g_ch_y * 3, g_ch_y * 3),
+            lora_ly.DepthConvBlock(g_ch_y * 3, g_ch_y * 3),
+            loralib.Conv2d(g_ch_y * 3, g_ch_y * 3, 1),
         )
 
     def forward(self, x):
@@ -164,9 +164,9 @@ class SpatialPrior(nn.Module):
     def __init__(self):
         super().__init__()
         self.conv = nn.Sequential(
-            ly.DepthConvBlock(g_ch_y * 4, g_ch_y * 3),
-            ly.DepthConvBlock(g_ch_y * 3, g_ch_y * 3),
-            nn.Conv2d(g_ch_y * 3, g_ch_y * 2, 1),
+            lora_ly.DepthConvBlock(g_ch_y * 4, g_ch_y * 3),
+            lora_ly.DepthConvBlock(g_ch_y * 3, g_ch_y * 3),
+            loralib.Conv2d(g_ch_y * 3, g_ch_y * 2, 1),
         )
 
     def forward(self, x):
@@ -187,13 +187,13 @@ class DCVCRTVideo(CommonCompression):
 
         self.feature_adaptor_i = lora_ly.DepthConvBlock(g_ch_src_d, g_ch_d)
         # self.feature_adaptor_i = ly.DepthConvBlock(g_ch_src_d, g_ch_d)
-        self.feature_adaptor_p = nn.Conv2d(g_ch_d, g_ch_d, 1)
+        self.feature_adaptor_p = loralib.Conv2d(g_ch_d, g_ch_d, 1)
         self.feature_extractor = FeatureExtractor()
 
         self.encoder = Encoder()
         self.hyper_encoder = HyperEncoder()
         self.hyper_decoder = HyperDecoder()
-        self.temporal_prior_encoder = ly.ResidualBlockWithStride2(g_ch_d, g_ch_y * 2)
+        self.temporal_prior_encoder = lora_ly.ResidualBlockWithStride2(g_ch_d, g_ch_y * 2)
         self.y_prior_fusion = PriorFusion()
         self.y_spatial_prior = SpatialPrior()
         self.decoder = Decoder()

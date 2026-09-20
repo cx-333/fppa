@@ -3,6 +3,8 @@ import math
 import numpy as np
 from torch import nn 
 import torch.nn.functional as F 
+from .layers import Bitparm 
+import src.loralib as lora_ly
 
 
 def build_index_dec(scales, scale_min, scale_max, log_scale_min, log_step_recip, skip_thres=None):
@@ -103,30 +105,8 @@ class EntropyCoder(object):
         self.encoder.set_use_two_encoders(use_two_entropy_coders)
         self.decoder.set_use_two_decoders(use_two_entropy_coders)
         
-        
-class Bitparm(nn.Module):
-    def __init__(self, qp_num, channel, final=False):
-        super().__init__()
-        self.final = final
-        self.h = nn.Parameter(torch.nn.init.normal_(
-            torch.empty([qp_num, channel, 1, 1]), 0, 0.01))                 # entropy_botleneck._matrix  (qp_num, channel, 1)
-        self.b = nn.Parameter(torch.nn.init.normal_(
-            torch.empty([qp_num, channel, 1, 1]), 0, 0.01))                 # entropy_botleneck._bias    (qp_num, channel, 1)
-        if not final:
-            self.a = nn.Parameter(torch.nn.init.normal_(
-                torch.empty([qp_num, channel, 1, 1]), 0, 0.01))
-        else:
-            self.a = None
-
-    def forward(self, x, index):
-        h = torch.index_select(self.h, 0, index)
-        b = torch.index_select(self.b, 0, index)
-        x = x * F.softplus(h) + b
-        if self.final:
-            return x
-        a = torch.index_select(self.a, 0, index)    # type: ignore 
-        return x + torch.tanh(x) * torch.tanh(a)
     
+
 
 class AEHelper(nn.Module):
     def __init__(self):
@@ -159,10 +139,14 @@ class BitEstimator(AEHelper):
     """
     def __init__(self, qp_num, channel):
         super().__init__()
-        self.f1 = Bitparm(qp_num, channel)
-        self.f2 = Bitparm(qp_num, channel)
-        self.f3 = Bitparm(qp_num, channel)
-        self.f4 = Bitparm(qp_num, channel, True)
+        # self.f1 = Bitparm(qp_num, channel)
+        # self.f2 = Bitparm(qp_num, channel)
+        # self.f3 = Bitparm(qp_num, channel)
+        # self.f4 = Bitparm(qp_num, channel, True)
+        self.f1 = lora_ly.BitparmLoRA(qp_num, channel)
+        self.f2 = lora_ly.BitparmLoRA(qp_num, channel)
+        self.f3 = lora_ly.BitparmLoRA(qp_num, channel)
+        self.f4 = lora_ly.BitparmLoRA(qp_num, channel, True)
         self.qp_num = qp_num
         self.channel = channel
 

@@ -5,6 +5,7 @@ import torch.nn.functional as F
 
 import math 
 from typing import Optional, List 
+from src.models.layers import Bitparm 
 
 
 class LoRALayer():
@@ -252,6 +253,9 @@ class ConvLoRA(nn.Module, LoRALayer):
             self.register_parameter(name, param)
         LoRALayer.__init__(self, r=r, lora_alpha=lora_alpha, lora_dropout=lora_dropout, merge_weights=merge_weights)
         assert isinstance(kernel_size, int)
+        self.kernel_size = kernel_size 
+        self.in_channels = in_channels 
+        self.out_channels = out_channels 
         # Actual trainable parameters
         self.lora_bias = None
         if r > 0:
@@ -330,6 +334,8 @@ class DepthConvLoRA(ConvLoRA):
         assert isinstance(kernel_size, int)
         assert self.conv.groups == in_channels == out_channels, "DepthConvLoRA only for depthwise"
         assert r <= kernel_size ** 2, f"rank upper bound is K^2 = {kernel_size**2}"
+        # self.in_channels = in_channels 
+        # self.out_channels = out_channels 
         # Actual trainable parameters
         self.lora_bias = None
         if r > 0:
@@ -348,3 +354,76 @@ class DepthConvLoRA(ConvLoRA):
         self.reset_parameters()
         self.merged = False
         
+        
+        
+class FLoRALayer():
+    def __init__(self, lora_alpha: int, lora_dropout: float=0., merge_weights: bool=False):
+        self.lora_alpha = lora_alpha 
+        if lora_dropout > 0:
+            self.lora_dropout = nn.Dropout(p=lora_dropout)
+        else:
+            self.lora_dropout = lambda x: x 
+        self.merged = False 
+        self.merge_weights = merge_weights 
+        
+        
+class BitparmLoRA(Bitparm, FLoRALayer):
+    def __init__(self, qp_num, channel, final=False, lora_alpha: int = 1, lora_dropout: float=0., merge_weights: bool=False):
+        Bitparm.__init__(self, qp_num, channel, final)
+        FLoRALayer.__init__(self, lora_alpha, lora_dropout, merge_weights)
+        
+        self.lora_h = nn.Parameter(torch.nn.init.zeros_(
+            torch.empty([qp_num, channel, 1, 1])
+        ))
+        
+        self.lora_b = nn.Parameter(torch.nn.init.zeros_(
+            torch.empty([qp_num, channel, 1, 1])
+        ))
+        
+        if not final:
+            self.lora_a = nn.Parameter(torch.nn.init.zeros_(
+                torch.empty([qp_num, channel, 1, 1])
+            ))
+            self.a.requires_grad = False 
+        else:
+            self.lora_a = None 
+        
+        self.h.requires_grad = False
+        self.b.requires_grad = False 
+        
+    def train(self, mode=True):   # type: ignore
+        super(BitparmLoRA, self).train() 
+        if mode:
+            if self.merge_weights and self.merged:
+                self.h -= self.lora_h 
+                self.b -= self.lora_b 
+                if not self.final:
+                    self.a -= self.lora_a 
+                self.merged = False 
+        else:
+            if self.merge_weights and not self.merged:
+                self.h += self.lora_h 
+                self.b += self.lora_b 
+                if not self.final:
+                    self.a += self.lora_a 
+                self.merged = True 
+    
+    def forward(self, x, index):
+        h = torch.index_select(self.h, 0, index)
+        b = torch.index_select(self.b, 0, index)
+    
+        if not self.merged:
+            h += torch.index_select(self.lora_h, 0, index)
+            b += torch.index_select(self.lora_b, 0, index) 
+            
+        x = x * F.softplus(h) + b 
+        
+        if self.final:
+            return x 
+        
+        a = torch.index_select(self.a, 0, index)
+        if not self.merged:
+            a += torch.index_select(self.a, 0, index)
+        
+        return x + torch.tanh(x) * torch.tanh(a) 
+    
