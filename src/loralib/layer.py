@@ -392,7 +392,7 @@ class BitparmLoRA(Bitparm, FLoRALayer):
         self.b.requires_grad = False 
         
     def train(self, mode=True):   # type: ignore
-        super(BitparmLoRA, self).train() 
+        super(BitparmLoRA, self).train(mode)
         if mode:
             if self.merge_weights and self.merged:
                 self.h -= self.lora_h 
@@ -423,7 +423,7 @@ class BitparmLoRA(Bitparm, FLoRALayer):
         
         a = torch.index_select(self.a, 0, index)
         if not self.merged:
-            a += torch.index_select(self.a, 0, index)
+            a += torch.index_select(self.lora_a, 0, index)
         
         return x + torch.tanh(x) * torch.tanh(a) 
     
