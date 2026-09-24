@@ -1,14 +1,21 @@
 
-model:
-  name: lora_dcvcrt_image 
-  N: 256
-  z_channel: 128
-  pretrained: null 
+model: 
+  intra_model:
+    name: lora_dcvcrt_image 
+    N: 256
+    z_channel: 128
+    ckpt: null
+    lora_ckpt: null 
+  inter_model:
+    name: lora_dcvcrt_video
+    z_channel: 128
+    ckpt: null  
+    lora_ckpt: null 
 
 
 train:
   epochs: 50
-  val_multi_qp_list: [0]
+  val_multi_qp_list: [8]
   seed: 8047 
   gpu_id: 0 
   warmup_epochs: 1
@@ -29,7 +36,7 @@ dataset:
     is_train: false 
     color_space: "ycbcr"
     norm: false 
-  batch_size: 16
+  batch_size: 8
   eval_batch_size: 1
   num_workers: 8
 
@@ -53,17 +60,24 @@ losses:
     range_norm: true 
     net: "alex"
   perceptual_loss_weight: 1.0
-  gen_loss_weight: 0.002
-  distortion_loss_weight: 150 
+  gen_loss_weight: 0.02
+  distortion_loss_weight: 100
 
 
+# discriminator:
+#   in_ch: 3
+#   out_ch: 1
+#   main_ch: 64
+#   y_ch: 128
+#   latent_nc: 16 
 discriminator:
+  _subd_type: "HiFiCConditionalDiscriminator"
+  _num_subd: 64
   in_ch: 3
   out_ch: 1
   main_ch: 64
-  y_ch: 256
+  y_ch: 128
   latent_nc: 16 
 
-
-save_dir: "./ckpts/lora_image_percept"
+save_dir: "./checkpoints/lora_image_percept"
 

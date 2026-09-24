@@ -1,54 +1,51 @@
 
+# Fidelity-Preserving Perceptual Image Compression via a Rate-Aware Mixture of LoRA Experts
 
-# ConvLORA for Video Realism and Fidelity Compression 
-
-
-LoRA 层后面需要修改，权重合并时需要考虑。
+This is the official implementatioi of paper --- "Fidelity-Preserving Perceptual Image Compression via a Rate-Aware Mixture of LoRA Experts".
 
 
-baseline
-```json
-{
-    "Kodak": [
-        {
-            "name": "lora_qp0",
-            "bpp": [0.0316, 0.0835, 0.2145, 0.3672, 0.7009, 0.9141 ],
-            "psnr": [25.22, 27.7321, 30.6948, 32.7926, 35.7233, 36.9682 ],
-            "ssim": [0.6187, 0.7141, 0.818, 0.8745, 0.9267, 0.9424 ],
-            "lpips": [0.288, 0.1912, 0.1065, 0.0687, 0.0393, 0.0312 ]
-        },
-        {
-            "name": "lora_qp8",
-            "bpp": [0.0316, 0.0835, 0.2145, 0.3672, 0.7009, 0.9141 ],
-            "psnr": [25.257, 27.8309, 30.7969, 32.8492, 35.6951, 36.8631],
-            "ssim": [0.6198, 0.7216, 0.8259, 0.8808, 0.9317, 0.9469 ],
-            "lpips": [0.285, 0.1781, 0.0959, 0.0636, 0.0388, 0.0312 ]
-        }
-    ]
-}
+## 📝 Abstract
+
+Learned image compression (LIC) is typically optimized for rate–distortion performance, yet perceptual fine-tuning often shifts the codec away from its original fidelity-oriented operating point. To address this, we propose a parameter-efficient framework that decouples perceptual adaptation parameters from the fidelity-oriented parameters. Specifically, we insert low-rank adaptation (LoRA) modules into the synthesis transform and fine-tune them with perceptual objectives. By simply disabling these updates, the original decoder is recovered exactly, enabling reversible switching between fidelity and realism modes for the same bitstream. Furthermore, to address rate-dependent artifacts, we introduce a rate-aware mixture of LoRA experts, in which a soft router adaptively combines specialized low-rank updates conditioned on the quality level. Experiments show that the proposed method preserves the original rate–distortion performance while achieving superior perceptual quality compared to state-of-the-art approaches, with only a limited number of additional parameters.
+
+
+## 🧩 Environment Requirements
+
+```shell
+torch>=2.0
+pip install -r requirements.txt
+```
+
+## 📦 Checkpoint 
+
+Put the inference checkpoint in the `ckpts` folder.
+
+```txt
+ckpts/*.pth.tar
+```
+
+You can download the pretrained checkpoint from ![here](https://pan.quark.cn/s/a822592d2204)
+
+
+## 🧮 Evaluation 
+
+Rate-Distortion & Rate-Perception Performance.
+
+
+## 🧰 Visual Comparison
+
+
+## 👀 More Visualization
+
+
+
+## ⏳ Citation
+
+```
+TBD.
 ```
 
 
-1 分析
+# 🤝 Acknowledgment
 
-图像压缩模型，原来的权重是基于MSE进行优化。我在解码端引入LORA，基于LPIPS和Adv损失微调了两个码率下的LORA模型，现在想分析两个LORA之间的差异。因为我发现即使只训练一个码率LORA模型，也会提升他码率下的感知质量。
-
-接下来我想做的：
-
-1 分析整个解码端的每层LORA权重影响力，保留关键层LORA，去除不必要的LORA层。
-
-- 发现 F_norm 的大小与 shape_BA 的形状大小有关， 无法直接判定。
-- 直接对解码端做 LORA，放弃逐层优化。
-
-2 分析LORA适应多个码率感知图像压缩模型的最小改动方案
-
-分析不同码率优化后的LORA权重差异（L2范数、余弦相似度）。
-- 分析的差异还挺大   \
-- 尝试一： `MOE-LoRA`, 适配多个码率下的感知增强。 
-
-
-3 在视频压缩模型中引入LORA，解决感知时序一致性问题
-
-- `ckpts/latest_lora_video_checkpoint_all_qp8.pth.tar` 是对 `FeatureExtractor`, `Decoder`, `Recon`, `Adaptor_i`, `Adaptor_p` 都进行了微调
-- `ckpts/latest_lora_video_checkpoint_qp0.pth.tar` 是对 `Recon` 和 `Adaptor_i` 进行了微调
-
+This work is built on ![DCVC-RT](https://github.com/microsoft/DCVC). Thanks for their awesome work!

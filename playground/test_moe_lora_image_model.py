@@ -1,7 +1,5 @@
 
 
-# from src.models.image_model import DCVCRTImage
-# from src.models.lora_image_model import DCVCRTImage
 from src.models.moe_lora_image_model import DCVCRTImage
 from src.utils.transforms import ycbcr2rgb, rgb2ycbcr
 from src.utils.utils import get_state_dict, replicated_pad, get_padding_size, AverageMeter 
@@ -28,6 +26,7 @@ def parse_args():
     args.add_argument("--save_dir", type=str, default="./results")
     args.add_argument("--model_path", type=str, default=None)
     args.add_argument("--lora_path", type=str, default=None)
+    args.add_argument("--mode", type=str, default="fidelity", choices=["fidelity", "perception"])
     return args.parse_args() 
 
 
@@ -82,8 +81,9 @@ def test(args):
     
     model = DCVCRTImage().to(device)
     model.load_state_dict(get_state_dict(args.model_path), strict=False)
-    lora_ckpt = torch.load(args.lora_path, map_location="cpu")
-    model.load_state_dict(lora_ckpt, strict=False)
+    if args.mode == "perception":
+        lora_ckpt = torch.load(args.lora_path, map_location="cpu")
+        model.load_state_dict(lora_ckpt, strict=False)
     model.eval()
     
     image_paths = scan_images(args.data_path)
@@ -124,7 +124,7 @@ def test(args):
             cur_psnr.update(psnr_val)
             cur_ssim.update(ssim_val)
             cur_lpips.update(lpips_val)
-
+            print(f"Image: {os.path.basename(image_path)} | QP: {qp} | Bpp: {bpp:.4f} | PSNR: {psnr_val:.4f} | SSIM: {ssim_val:.4f} | LPIPS: {lpips_val:.4f}")
             if args.save:
                 img = ToPILImage()(img_recon[0])
                 img.save(os.path.join(args.save_dir, os.path.basename(image_path).split(".")[0] + f"_qp{qp}.png"))

@@ -135,6 +135,8 @@ class DCVCRTImage(CommonCompression):
         curr_q_enc = self.q_scale_enc[qp]
         curr_q_dec = self.q_scale_dec[qp]
         curr_q_cond = self.q_cond[qp]
+        if curr_q_cond.dim() == 1:
+            curr_q_cond = curr_q_cond.unsqueeze(0).expand(x.size(0), -1)
         
         # analysis
         y, feature = self.enc(x, curr_q_enc)
@@ -252,6 +254,8 @@ class DCVCRTImage(CommonCompression):
             self.y_spatial_prior
         )
         
+        if curr_q_cond.dim() == 1:
+            curr_q_cond = curr_q_cond.unsqueeze(0).expand(y_hat.size(0), -1)
         x_hat, moe_loss = self.dec(y_hat, curr_q_dec, curr_q_cond)
         
         x_hat = torch.clamp(x_hat, 0.0, 1.0)
@@ -261,8 +265,3 @@ class DCVCRTImage(CommonCompression):
             "y_hat": y_hat,
             "moe_loss": moe_loss
         }
-        
-        
-
-
-
