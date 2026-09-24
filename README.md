@@ -1,7 +1,7 @@
 
 # Fidelity-Preserving Perceptual Image Compression via a Rate-Aware Mixture of LoRA Experts
 
-This is the official implementatioi of paper --- "Fidelity-Preserving Perceptual Image Compression via a Rate-Aware Mixture of LoRA Experts".
+This is the official implementation of paper --- "Fidelity-Preserving Perceptual Image Compression via a Rate-Aware Mixture of LoRA Experts".
 
 
 ## 📝 Abstract
@@ -26,6 +26,11 @@ ckpts/*.pth.tar
 
 You can download the pretrained checkpoint from [here](https://pan.quark.cn/s/a822592d2204)
 
+## 🔄 Inference
+
+```shell
+bash test_moe_lora_image.sh
+```
 
 ## 🧮 Evaluation 
 
@@ -58,4 +63,4 @@ TBD.
 
 # 🤝 Acknowledgment
 
-This work is built on ![DCVC-RT](https://github.com/microsoft/DCVC). Thanks for their awesome work!
+This work is built on [DCVC-RT](https://github.com/microsoft/DCVC). Thanks for their awesome work!
