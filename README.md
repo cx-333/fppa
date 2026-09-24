@@ -16,6 +16,15 @@ torch>=2.0
 pip install -r requirements.txt
 ```
 
+Please build the `C++` code to support bitstream writing.
+
+```shell
+
+cd ./src/cpp
+pip install .
+
+```
+
 ## 📦 Checkpoint 
 
 Put the inference checkpoint in the `ckpts` folder.
@@ -63,4 +72,4 @@ TBD.
 
 # 🤝 Acknowledgment
 
-This work is built on [DCVC-RT](https://github.com/microsoft/DCVC). Thanks for their awesome work!
+This work is built on [DCVC-RT](https://github.com/microsoft/DCVC) and [LoRA](https://github.com/microsoft/LoRA). Thanks for their awesome work!
