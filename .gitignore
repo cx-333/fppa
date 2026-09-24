@@ -3,7 +3,7 @@ __pycache__/
 .vscode/
 ckpts/ 
 results/ 
-temp_test.ipynb 
+tmp_test.ipynb 
 testcase.py 
 method_review 
 .pytest_cache/ 
@@ -18,3 +18,6 @@ playground/test_lora_image_model.py
 playground/test_lora_video_model.py
 playground/train_lora_image_percept.py
 playground/train_lora_video_percept.py
+configs/lora_image_train_cfg.yaml
+configs/lora_video_train_cfg.yaml
+configs/moe_lora_video_train_cfg.yaml
