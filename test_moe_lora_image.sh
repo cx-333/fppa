@@ -3,6 +3,7 @@
 set -e 
 
 # mode: fidelity or perception 
+# quant_level: single value or multiple values (0~63)
 
 python -m playground.test_moe_lora_image_model \
     --data_path "./assets" \
